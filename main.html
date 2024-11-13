@@ -96,8 +96,8 @@
 
       document.getElementById("fillButton").onclick = () => {
         document.getElementById("wordList").value =
-          "fair\nhair\nchair\nstair\nair\nlair\ncar\npart\nhard\nstart\nstar\nsharp\nplay\nmay\nsay\nday\nway\nspray\nsee\nbeen\nseen\nthree\ngreen\nsleep\nhigh\nlight\nbright\nnight\nfright\nmight\ngirl\nthird\ntwirl\nbird\nwhirl\ndirt\ntoo\nfood\nmoon\nzoo\npool\nspoon\nsort\nhorse\nfork\nshort\nsport\nsnort\nout\nloud\nround\nshout\nmouth\nfound\nblow\nlow\nknow\nsnow\nshow\nslow\ntoy\nenjoy\nboy\ntook\nbook\ncook\nlook\nshook\nfoot\nplay\nday\nmay\nway\nsay\nspray\nmake\ncake\nname\nsame\nlate\ndate\nfair\nair\nstair\nhair\nchair\nlair\nshare\ndare\nscare\nsquare\nbare\nsort\nshort\nhorse\nsport\nfork\nsnort\nsaw\nlaw\ndawn\ncrawl\npaw\nyawn\nsnail\npaid\ntail\ntrain\npaint\nrain\nclean\ndream\nseat\nscream\nreal\nsmile\nwhite\nnice\nlike\ntime\nhide\nburn\nturn\nspurt\nnurse\npurse\nhurt\nnever\nbetter\nweather\nafter\nproper\ncorner\nfire\nhire\nwire\nbonfire\ninspire\nconspire\nhome\nhope\nspoke\nnote\nbroke\nphone\ngoat\nboat\nroad\nthroat\ntoast\ncoat\nhow\ndown\nbrown\ncow\ntown\nnow\njoin\nvoice\ncoin\ntune\nrude\nhuge\nbrute\nuse\nJune\nchew\nnew\nblew\nflew\ndrew\ngrew\nhear\ndear\nfear\nnear\nyear\near\npure\nsure\ncure\npicture\nmixture\ncream\ncreature\nfuture\nadventure\ntemperature";
-        document.getElementById("speed").value = 2000;
+          "help\nlet\nran\nbad\nget\nwet\nput\ncatch\nwith\nthat\nthen\noff";
+        document.getElementById("speed").value = 3000;
       };
 
       document.getElementById("startButton").onclick = () => {
@@ -149,13 +149,22 @@
       }
 
       function showNextCard() {
-        if (currentIndex < words.length) {
-          card.innerText = words[currentIndex];
-          canMarkCorrect = true;
-          startCountdown();
-        } else {
-          endGame();
-        }
+        // Hide the card for 500ms before showing the next word
+        card.style.visibility = "hidden";
+        document.body.style.backgroundColor = "#000"; // Set background to black
+
+        setTimeout(() => {
+          document.body.style.backgroundColor = ""; // Reset background color
+          card.style.visibility = "visible"; // Show the card
+
+          if (currentIndex < words.length) {
+            card.innerText = words[currentIndex];
+            canMarkCorrect = true;
+            startCountdown();
+          } else {
+            endGame();
+          }
+        }, 500); // 500ms delay before showing the next word
       }
 
       function startCountdown() {
