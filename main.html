@@ -19,7 +19,7 @@
       <h1 class="text-5xl font-bold mb-4">Word Flashcard Setup</h1>
       <textarea
         id="wordList"
-        rows="10"
+        rows="5"
         class="w-full p-2 border rounded mb-4"
         placeholder="Enter words, one per line..."
       ></textarea>
@@ -48,7 +48,7 @@
       id="flashcardScreen"
       class="hidden flex flex-col items-center justify-center w-full max-w-md text-center"
     >
-      <div id="card" class="text-[200px] font-bold mb-4"></div>
+      <div id="card" class="text-[100px] font-bold mb-4"></div>
       <div id="first-timer" class="text-[200px]"></div>
       <div id="timer" class="text-2lg mb-4 absolute top-2 right-2"></div>
     </div>
@@ -118,6 +118,9 @@
         wrong = 0;
         words = shuffle(words);
         startPreCountdown();
+
+        // Add click event to mark as correct on screen click
+        flashcardScreen.addEventListener("click", () => handleResponse(true));
       }
 
       function startPreCountdown() {
