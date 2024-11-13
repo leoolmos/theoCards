@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flashcard App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .bg-correct {
+        background-color: #4caf50 !important; /* Green */
+      }
+      .bg-wrong {
+        background-color: #f44336 !important; /* Red */
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center h-screen bg-gray-100">
+    <div id="setupScreen" class="w-full max-w-lg text-center">
+      <h1 class="text-5xl font-bold mb-4">Word Flashcard Setup</h1>
+      <textarea
+        id="wordList"
+        rows="10"
+        class="w-full p-2 border rounded mb-4"
+        placeholder="Enter words, one per line..."
+      ></textarea>
+      <input
+        type="number"
+        id="speed"
+        value="750"
+        class="w-full p-2 border rounded mb-4"
+        placeholder="Card change speed in milliseconds (e.g., 2000)"
+      />
+      <button
+        id="fillButton"
+        class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded mb-2"
+      >
+        Fill with Example Data
+      </button>
+      <button
+        id="startButton"
+        class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded"
+      >
+        Start
+      </button>
+    </div>
+
+    <div
+      id="flashcardScreen"
+      class="hidden flex flex-col items-center justify-center w-full max-w-md text-center"
+    >
+      <div id="card" class="text-[200px] font-bold mb-4"></div>
+      <div id="first-timer" class="text-[200px]"></div>
+      <div id="timer" class="text-2lg mb-4 absolute top-2 right-2"></div>
+    </div>
+
+    <div
+      id="resultScreen"
+      class="hidden flex flex-col items-center justify-center w-full max-w-md text-center"
+    >
+      <h1 class="text-2xl font-bold mb-4">Results</h1>
+      <div id="resultMessage" class="text-xl"></div>
+      <button
+        id="restartButton"
+        class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded mt-4"
+      >
+        Restart
+      </button>
+    </div>
+
+    <script>
+      let words = [];
+      let currentIndex = 0;
+      let timer;
+      let countdownTimer;
+      let speed = 2000;
+      let correct = 0;
+      let wrong = 0;
+
+      const setupScreen = document.getElementById("setupScreen");
+      const flashcardScreen = document.getElementById("flashcardScreen");
+      const resultScreen = document.getElementById("resultScreen");
+      const card = document.getElementById("card");
+      const firstTimerElement = document.getElementById("first-timer");
+      const timerElement = document.getElementById("timer");
+      const resultMessage = document.getElementById("resultMessage");
+
+      document.getElementById("fillButton").onclick = () => {
+        document.getElementById("wordList").value =
+          "fair\nhair\nchair\nstair\nair\nlair\ncar\npart\nhard\nstart\nstar\nsharp\nplay\nmay\nsay\nday\nway\nspray\nsee\nbeen\nseen\nthree\ngreen\nsleep\nhigh\nlight\nbright\nnight\nfright\nmight\ngirl\nthird\ntwirl\nbird\nwhirl\ndirt\ntoo\nfood\nmoon\nzoo\npool\nspoon\nsort\nhorse\nfork\nshort\nsport\nsnort\nout\nloud\nround\nshout\nmouth\nfound\nblow\nlow\nknow\nsnow\nshow\nslow\ntoy\nenjoy\nboy\ntook\nbook\ncook\nlook\nshook\nfoot\nplay\nday\nmay\nway\nsay\nspray\nmake\ncake\nname\nsame\nlate\ndate\nfair\nair\nstair\nhair\nchair\nlair\nshare\ndare\nscare\nsquare\nbare\nsort\nshort\nhorse\nsport\nfork\nsnort\nsaw\nlaw\ndawn\ncrawl\npaw\nyawn\nsnail\npaid\ntail\ntrain\npaint\nrain\nclean\ndream\nseat\nscream\nreal\nsmile\nwhite\nnice\nlike\ntime\nhide\nburn\nturn\nspurt\nnurse\npurse\nhurt\nnever\nbetter\nweather\nafter\nproper\ncorner\nfire\nhire\nwire\nbonfire\ninspire\nconspire\nhome\nhope\nspoke\nnote\nbroke\nphone\ngoat\nboat\nroad\nthroat\ntoast\ncoat\nhow\ndown\nbrown\ncow\ntown\nnow\njoin\nvoice\ncoin\ntune\nrude\nhuge\nbrute\nuse\nJune\nchew\nnew\nblew\nflew\ndrew\ngrew\nhear\ndear\nfear\nnear\nyear\near\npure\nsure\ncure\npicture\nmixture\ncream\ncreature\nfuture\nadventure\ntemperature";
+        document.getElementById("speed").value = 2000; // Set example speed in milliseconds
+      };
+
+      document.getElementById("startButton").onclick = () => {
+        const wordListInput = document.getElementById("wordList").value.trim();
+        speed =
+          parseInt(document.getElementById("speed").value.trim()) || speed;
+
+        words = wordListInput.split("\n").filter((word) => word.trim() !== "");
+        if (words.length > 0 && speed > 0) {
+          setupScreen.classList.add("hidden");
+          flashcardScreen.classList.remove("hidden");
+          startGame();
+        }
+      };
+
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function startGame() {
+        gameStarted = true;
+        currentIndex = 0;
+        correct = 0;
+        wrong = 0;
+        words = shuffle(words);
+        startPreCountdown();
+      }
+
+      function startPreCountdown() {
+        let preCount = 3;
+        firstTimerElement.innerText = preCount;
+
+        const preCountdown = setInterval(() => {
+          preCount--;
+          firstTimerElement.innerText = preCount > 0 ? preCount : "";
+
+          if (preCount <= 0) {
+            clearInterval(preCountdown);
+            showNextCard();
+          }
+        }, 1000);
+      }
+
+      function showNextCard() {
+        if (currentIndex < words.length) {
+          card.innerText = words[currentIndex];
+          startCountdown();
+          currentIndex++;
+        } else {
+          endGame();
+        }
+      }
+
+      function startCountdown() {
+        clearTimeout(timer);
+        clearInterval(countdownTimer);
+
+        let timeLeft = speed;
+        updateTimerDisplay(timeLeft);
+
+        countdownTimer = setInterval(() => {
+          timeLeft -= 10;
+          if (timeLeft <= 0) {
+            clearInterval(countdownTimer);
+            flashBackground("bg-wrong");
+            handleResponse(false);
+          } else {
+            updateTimerDisplay(timeLeft);
+          }
+        }, 10);
+
+        timer = setTimeout(() => {
+          clearInterval(countdownTimer);
+          flashBackground("bg-wrong");
+          handleResponse(false);
+        }, speed);
+      }
+
+      function updateTimerDisplay(timeLeft) {
+        const seconds = Math.floor(timeLeft / 1000);
+        const milliseconds = timeLeft % 1000;
+        timerElement.innerText = `${seconds}.${String(milliseconds).padStart(
+          3,
+          "0"
+        )}`;
+      }
+
+      let gameStarted = false;
+
+      document.addEventListener("keydown", (event) => {
+        if (!gameStarted) return;
+
+        if (event.key === "ArrowRight") {
+          handleResponse(true);
+        } else if (event.key === "ArrowLeft") {
+          handleResponse(false);
+        }
+      });
+
+      function handleResponse(isCorrect) {
+        clearTimeout(timer);
+        clearInterval(countdownTimer);
+
+        if (isCorrect) {
+          correct++;
+          flashBackground("bg-correct");
+        } else {
+          wrong++;
+          flashBackground("bg-wrong");
+        }
+
+        showNextCard();
+      }
+
+      function flashBackground(className) {
+        document.body.classList.add(className);
+        setTimeout(() => {
+          document.body.classList.remove(className);
+        }, 300);
+      }
+
+      function endGame() {
+        gameStarted = false;
+        flashcardScreen.classList.add("hidden");
+        resultScreen.classList.remove("hidden");
+        resultMessage.innerHTML = `Correct: ${correct} <br> Wrong: ${wrong}`;
+      }
+
+      document.getElementById("restartButton").onclick = () => {
+        gameStarted = false;
+        currentIndex = 0;
+        correct = 0;
+        wrong = 0;
+        clearTimeout(timer);
+        clearInterval(countdownTimer);
+
+        setupScreen.classList.remove("hidden");
+        flashcardScreen.classList.add("hidden");
+        resultScreen.classList.add("hidden");
+        card.innerText = "";
+        timerElement.innerText = "";
+      };
+    </script>
+  </body>
+</html>
