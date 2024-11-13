@@ -12,14 +12,35 @@
       .bg-wrong {
         background-color: #f44336 !important; /* Red */
       }
+      .hold-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 15px;
+        background-color: #ff9800;
+        color: white;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .back-button {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        padding: 10px 15px;
+        background-color: #2196f3;
+        color: white;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body class="flex items-center justify-center h-screen bg-gray-100">
     <div id="setupScreen" class="w-full max-w-lg text-center">
       <h1 class="text-5xl font-bold mb-0">Theo word Flashcard</h1>
       <small class="flex w-full justify-center mb-4">
-        Click right or touch the screen before the timer finishes to mark as
-        correct
+        Click to mark correct, use the back button to go back
       </small>
       <textarea
         id="wordList"
@@ -52,11 +73,13 @@
 
     <div
       id="flashcardScreen"
-      class="hidden flex flex-col items-center justify-center w-full max-w-md text-center"
+      class="hidden flex flex-col items-center justify-center w-full max-w-md text-center relative"
     >
       <div id="card" class="text-[100px] font-bold mb-4"></div>
       <div id="first-timer" class="text-[200px]"></div>
-      <div id="timer" class="text-2lg mb-4 absolute top-2 right-2"></div>
+      <div id="timer" class="text-2lg mb-4 fixed top-2 right-2"></div>
+      <button id="holdButton" class="hold-button">Hold</button>
+      <button id="backButton" class="back-button">Back</button>
     </div>
 
     <div
@@ -83,7 +106,8 @@
       let correct = 0;
       let wrong = 0;
       let canMarkCorrect = false;
-      let wrongWords = []; // List to store wrong words
+      let wrongWords = [];
+      let isPaused = false;
 
       const setupScreen = document.getElementById("setupScreen");
       const flashcardScreen = document.getElementById("flashcardScreen");
@@ -93,15 +117,22 @@
       const timerElement = document.getElementById("timer");
       const resultMessage = document.getElementById("resultMessage");
       const wrongWordsList = document.getElementById("wrongWordsList");
+      const holdButton = document.getElementById("holdButton");
+      const backButton = document.getElementById("backButton");
+
+      const textarea = document.getElementById("wordList");
+      textarea.addEventListener("input", function () {
+        this.value = this.value.toLowerCase();
+      });
 
       document.getElementById("fillButton").onclick = () => {
-        document.getElementById("wordList").value =
+        textarea.value =
           "help\nlet\nran\nbad\nget\nwet\nput\ncatch\nwith\nthat\nthen\noff";
         document.getElementById("speed").value = 3000;
       };
 
       document.getElementById("startButton").onclick = () => {
-        const wordListInput = document.getElementById("wordList").value.trim();
+        const wordListInput = textarea.value.trim();
         speed =
           parseInt(document.getElementById("speed").value.trim()) || speed;
 
@@ -126,11 +157,16 @@
         currentIndex = 0;
         correct = 0;
         wrong = 0;
-        wrongWords = []; // Reset wrong words list for each new game
+        wrongWords = [];
         words = shuffle(words);
         startPreCountdown();
 
         document.body.addEventListener("click", markCorrectIfAllowed);
+        holdButton.addEventListener("mousedown", pauseGame);
+        holdButton.addEventListener("mouseup", resumeGame);
+        holdButton.addEventListener("touchstart", pauseGame);
+        holdButton.addEventListener("touchend", resumeGame);
+        backButton.addEventListener("click", rollbackPreviousWord);
       }
 
       function startPreCountdown() {
@@ -149,14 +185,13 @@
       }
 
       function showNextCard() {
-        // Hide the card for 500ms before showing the next word
         setTimeout(() => {
           card.style.visibility = "hidden";
-          document.body.style.backgroundColor = ""; // Reset background color
+          document.body.style.backgroundColor = "";
         }, 300);
 
         setTimeout(() => {
-          card.style.visibility = "visible"; // Show the card
+          card.style.visibility = "visible";
 
           if (currentIndex < words.length) {
             card.innerText = words[currentIndex];
@@ -165,7 +200,7 @@
           } else {
             endGame();
           }
-        }, 1000); // 500ms delay before showing the next word
+        }, 1000);
       }
 
       function startCountdown() {
@@ -176,13 +211,15 @@
         updateTimerDisplay(timeLeft);
 
         countdownTimer = setInterval(() => {
-          timeLeft -= 10;
-          if (timeLeft <= 0) {
-            clearInterval(countdownTimer);
-            flashBackground("bg-wrong");
-            handleResponse(false);
-          } else {
-            updateTimerDisplay(timeLeft);
+          if (!isPaused) {
+            timeLeft -= 10;
+            if (timeLeft <= 0) {
+              clearInterval(countdownTimer);
+              flashBackground("bg-wrong");
+              handleResponse(false);
+            } else {
+              updateTimerDisplay(timeLeft);
+            }
           }
         }, 10);
 
@@ -202,27 +239,30 @@
         )}`;
       }
 
-      let gameStarted = false;
-
-      document.addEventListener("keydown", (event) => {
-        if (!gameStarted) return;
-
-        if (event.key === "ArrowRight") {
+      function markCorrectIfAllowed(event) {
+        if (canMarkCorrect && event.target === document.body) {
           handleResponse(true);
-        } else if (event.key === "ArrowLeft") {
-          handleResponse(false);
         }
-      });
+      }
 
-      function markCorrectIfAllowed() {
-        if (canMarkCorrect) {
-          handleResponse(true);
+      function rollbackPreviousWord() {
+        if (currentIndex > 0) {
+          currentIndex--;
+          if (wrongWords.includes(words[currentIndex])) {
+            wrong--;
+            wrongWords = wrongWords.filter(
+              (word) => word !== words[currentIndex]
+            );
+          } else {
+            correct--;
+          }
+          showNextCard();
         }
       }
 
       function handleResponse(isCorrect) {
         if (!canMarkCorrect) return;
-        canMarkCorrect = false; // Disable further marking
+        canMarkCorrect = false;
 
         clearTimeout(timer);
         clearInterval(countdownTimer);
@@ -232,11 +272,11 @@
           flashBackground("bg-correct");
         } else {
           wrong++;
-          wrongWords.push(words[currentIndex]); // Add current word to wrong words
+          wrongWords.push(words[currentIndex]);
           flashBackground("bg-wrong");
         }
 
-        currentIndex++; // Move to the next word only after response is handled
+        currentIndex++;
         showNextCard();
       }
 
@@ -247,13 +287,23 @@
         }, 300);
       }
 
+      function pauseGame() {
+        isPaused = true;
+        clearTimeout(timer);
+        clearInterval(countdownTimer);
+      }
+
+      function resumeGame() {
+        isPaused = false;
+        startCountdown();
+      }
+
       function endGame() {
         gameStarted = false;
         flashcardScreen.classList.add("hidden");
         resultScreen.classList.remove("hidden");
         resultMessage.innerHTML = `Correct: ${correct} <br> Wrong: ${wrong}`;
 
-        // Display list of wrong words
         wrongWordsList.innerHTML = `Wrong Words: <br> ${wrongWords
           .map((word) => `<span>${word}</span>`)
           .join("<br>")}`;
@@ -267,8 +317,7 @@
         clearTimeout(timer);
         clearInterval(countdownTimer);
 
-        // Pre-fill word list with only wrong words
-        document.getElementById("wordList").value = wrongWords.join("\n");
+        textarea.value = wrongWords.join("\n");
         setupScreen.classList.remove("hidden");
         flashcardScreen.classList.add("hidden");
         resultScreen.classList.add("hidden");
