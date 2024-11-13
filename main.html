@@ -127,7 +127,7 @@
         startPreCountdown();
 
         // Add click event to mark as correct on screen click
-        flashcardScreen.addEventListener("click", () => {
+        document.body.addEventListener("click", () => {
           if (canMarkCorrect) {
             handleResponse(true);
           }
