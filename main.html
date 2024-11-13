@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flashcard App</title>
+    <title>Theo word Flashcard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       .bg-correct {
@@ -16,7 +16,11 @@
   </head>
   <body class="flex items-center justify-center h-screen bg-gray-100">
     <div id="setupScreen" class="w-full max-w-lg text-center">
-      <h1 class="text-5xl font-bold mb-4">Word Flashcard Setup</h1>
+      <h1 class="text-5xl font-bold mb-0">Theo word Flashcard</h1>
+      <small class="flex w-full justify-center mb-4"
+        >Click right or touch the screen before the timer finishes to mark as
+        correct
+      </small>
       <textarea
         id="wordList"
         rows="5"
@@ -30,18 +34,20 @@
         class="w-full p-2 border rounded mb-4"
         placeholder="Card change speed in milliseconds (e.g., 2000)"
       />
-      <button
-        id="fillButton"
-        class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded mb-2"
-      >
-        Fill with Example Data
-      </button>
-      <button
-        id="startButton"
-        class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded"
-      >
-        Start
-      </button>
+      <div class="flex space-x-2">
+        <button
+          id="fillButton"
+          class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded"
+        >
+          Fill with Example Data
+        </button>
+        <button
+          id="startButton"
+          class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded"
+        >
+          Start
+        </button>
+      </div>
     </div>
 
     <div
@@ -75,6 +81,7 @@
       let speed = 2000;
       let correct = 0;
       let wrong = 0;
+      let canMarkCorrect = false; // Track if marking as correct is allowed
 
       const setupScreen = document.getElementById("setupScreen");
       const flashcardScreen = document.getElementById("flashcardScreen");
@@ -120,7 +127,11 @@
         startPreCountdown();
 
         // Add click event to mark as correct on screen click
-        flashcardScreen.addEventListener("click", () => handleResponse(true));
+        flashcardScreen.addEventListener("click", () => {
+          if (canMarkCorrect) {
+            handleResponse(true);
+          }
+        });
       }
 
       function startPreCountdown() {
@@ -141,6 +152,7 @@
       function showNextCard() {
         if (currentIndex < words.length) {
           card.innerText = words[currentIndex];
+          canMarkCorrect = true; // Enable marking as correct when a new word appears
           startCountdown();
           currentIndex++;
         } else {
@@ -195,8 +207,11 @@
       });
 
       function handleResponse(isCorrect) {
+        if (!canMarkCorrect) return; // Prevent marking if it's not allowed
+
         clearTimeout(timer);
         clearInterval(countdownTimer);
+        canMarkCorrect = false; // Disable marking after a response
 
         if (isCorrect) {
           correct++;
