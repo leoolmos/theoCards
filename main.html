@@ -150,11 +150,12 @@
 
       function showNextCard() {
         // Hide the card for 500ms before showing the next word
-        card.style.visibility = "hidden";
-        document.body.style.backgroundColor = "#000"; // Set background to black
+        setTimeout(() => {
+          card.style.visibility = "hidden";
+          document.body.style.backgroundColor = ""; // Reset background color
+        }, 300);
 
         setTimeout(() => {
-          document.body.style.backgroundColor = ""; // Reset background color
           card.style.visibility = "visible"; // Show the card
 
           if (currentIndex < words.length) {
@@ -164,7 +165,7 @@
           } else {
             endGame();
           }
-        }, 500); // 500ms delay before showing the next word
+        }, 1000); // 500ms delay before showing the next word
       }
 
       function startCountdown() {
