@@ -17,8 +17,8 @@
   <body class="flex items-center justify-center h-screen bg-gray-100">
     <div id="setupScreen" class="w-full max-w-lg text-center">
       <h1 class="text-5xl font-bold mb-0">Theo word Flashcard</h1>
-      <small class="flex w-full justify-center mb-4"
-        >Click right or touch the screen before the timer finishes to mark as
+      <small class="flex w-full justify-center mb-4">
+        Click right or touch the screen before the timer finishes to mark as
         correct
       </small>
       <textarea
@@ -64,12 +64,13 @@
       class="hidden flex flex-col items-center justify-center w-full max-w-md text-center"
     >
       <h1 class="text-2xl font-bold mb-4">Results</h1>
-      <div id="resultMessage" class="text-xl"></div>
+      <div id="resultMessage" class="text-xl mb-4"></div>
+      <div id="wrongWordsList" class="text-left mb-4"></div>
       <button
         id="restartButton"
         class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded mt-4"
       >
-        Restart
+        Restart with Wrong Words
       </button>
     </div>
 
@@ -81,7 +82,8 @@
       let speed = 2000;
       let correct = 0;
       let wrong = 0;
-      let canMarkCorrect = false; // Track if marking as correct is allowed
+      let canMarkCorrect = false;
+      let wrongWords = []; // List to store wrong words
 
       const setupScreen = document.getElementById("setupScreen");
       const flashcardScreen = document.getElementById("flashcardScreen");
@@ -90,11 +92,12 @@
       const firstTimerElement = document.getElementById("first-timer");
       const timerElement = document.getElementById("timer");
       const resultMessage = document.getElementById("resultMessage");
+      const wrongWordsList = document.getElementById("wrongWordsList");
 
       document.getElementById("fillButton").onclick = () => {
         document.getElementById("wordList").value =
           "fair\nhair\nchair\nstair\nair\nlair\ncar\npart\nhard\nstart\nstar\nsharp\nplay\nmay\nsay\nday\nway\nspray\nsee\nbeen\nseen\nthree\ngreen\nsleep\nhigh\nlight\nbright\nnight\nfright\nmight\ngirl\nthird\ntwirl\nbird\nwhirl\ndirt\ntoo\nfood\nmoon\nzoo\npool\nspoon\nsort\nhorse\nfork\nshort\nsport\nsnort\nout\nloud\nround\nshout\nmouth\nfound\nblow\nlow\nknow\nsnow\nshow\nslow\ntoy\nenjoy\nboy\ntook\nbook\ncook\nlook\nshook\nfoot\nplay\nday\nmay\nway\nsay\nspray\nmake\ncake\nname\nsame\nlate\ndate\nfair\nair\nstair\nhair\nchair\nlair\nshare\ndare\nscare\nsquare\nbare\nsort\nshort\nhorse\nsport\nfork\nsnort\nsaw\nlaw\ndawn\ncrawl\npaw\nyawn\nsnail\npaid\ntail\ntrain\npaint\nrain\nclean\ndream\nseat\nscream\nreal\nsmile\nwhite\nnice\nlike\ntime\nhide\nburn\nturn\nspurt\nnurse\npurse\nhurt\nnever\nbetter\nweather\nafter\nproper\ncorner\nfire\nhire\nwire\nbonfire\ninspire\nconspire\nhome\nhope\nspoke\nnote\nbroke\nphone\ngoat\nboat\nroad\nthroat\ntoast\ncoat\nhow\ndown\nbrown\ncow\ntown\nnow\njoin\nvoice\ncoin\ntune\nrude\nhuge\nbrute\nuse\nJune\nchew\nnew\nblew\nflew\ndrew\ngrew\nhear\ndear\nfear\nnear\nyear\near\npure\nsure\ncure\npicture\nmixture\ncream\ncreature\nfuture\nadventure\ntemperature";
-        document.getElementById("speed").value = 2000; // Set example speed in milliseconds
+        document.getElementById("speed").value = 2000;
       };
 
       document.getElementById("startButton").onclick = () => {
@@ -123,15 +126,11 @@
         currentIndex = 0;
         correct = 0;
         wrong = 0;
+        wrongWords = []; // Reset wrong words list for each new game
         words = shuffle(words);
         startPreCountdown();
 
-        // Add click event to mark as correct on screen click
-        document.body.addEventListener("click", () => {
-          if (canMarkCorrect) {
-            handleResponse(true);
-          }
-        });
+        document.body.addEventListener("click", markCorrectIfAllowed);
       }
 
       function startPreCountdown() {
@@ -152,9 +151,8 @@
       function showNextCard() {
         if (currentIndex < words.length) {
           card.innerText = words[currentIndex];
-          canMarkCorrect = true; // Enable marking as correct when a new word appears
+          canMarkCorrect = true;
           startCountdown();
-          currentIndex++;
         } else {
           endGame();
         }
@@ -206,21 +204,29 @@
         }
       });
 
+      function markCorrectIfAllowed() {
+        if (canMarkCorrect) {
+          handleResponse(true);
+        }
+      }
+
       function handleResponse(isCorrect) {
-        if (!canMarkCorrect) return; // Prevent marking if it's not allowed
+        if (!canMarkCorrect) return;
+        canMarkCorrect = false; // Disable further marking
 
         clearTimeout(timer);
         clearInterval(countdownTimer);
-        canMarkCorrect = false; // Disable marking after a response
 
         if (isCorrect) {
           correct++;
           flashBackground("bg-correct");
         } else {
           wrong++;
+          wrongWords.push(words[currentIndex]); // Add current word to wrong words
           flashBackground("bg-wrong");
         }
 
+        currentIndex++; // Move to the next word only after response is handled
         showNextCard();
       }
 
@@ -236,6 +242,11 @@
         flashcardScreen.classList.add("hidden");
         resultScreen.classList.remove("hidden");
         resultMessage.innerHTML = `Correct: ${correct} <br> Wrong: ${wrong}`;
+
+        // Display list of wrong words
+        wrongWordsList.innerHTML = `Wrong Words: <br> ${wrongWords
+          .map((word) => `<span>${word}</span>`)
+          .join("<br>")}`;
       }
 
       document.getElementById("restartButton").onclick = () => {
@@ -246,6 +257,8 @@
         clearTimeout(timer);
         clearInterval(countdownTimer);
 
+        // Pre-fill word list with only wrong words
+        document.getElementById("wordList").value = wrongWords.join("\n");
         setupScreen.classList.remove("hidden");
         flashcardScreen.classList.add("hidden");
         resultScreen.classList.add("hidden");
