@@ -34,6 +34,85 @@
         border-radius: 5px;
         cursor: pointer;
       }
+      .selected {
+        background-color: #4caf50 !important; /* Highlight selected button */
+        color: white;
+      }
+      /* Full-screen Fireworks Animation */
+      #fireworks {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 10;
+      }
+      .firework {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background-color: red;
+        animation: firework 1.5s ease-out infinite;
+        opacity: 0;
+      }
+      .firework:nth-child(1) {
+        left: 20%;
+        top: 30%;
+        animation-delay: 0s;
+      }
+      .firework:nth-child(2) {
+        left: 50%;
+        top: 20%;
+        animation-delay: 0.2s;
+      }
+      .firework:nth-child(3) {
+        left: 80%;
+        top: 40%;
+        animation-delay: 0.4s;
+      }
+      .firework:nth-child(4) {
+        left: 30%;
+        top: 60%;
+        animation-delay: 0.6s;
+      }
+      .firework:nth-child(5) {
+        left: 70%;
+        top: 70%;
+        animation-delay: 0.8s;
+      }
+      .firework:nth-child(6) {
+        left: 50%;
+        top: 50%;
+        animation-delay: 1s;
+      }
+      .firework:nth-child(7) {
+        left: 90%;
+        top: 30%;
+        animation-delay: 1.2s;
+      }
+      .firework:nth-child(8) {
+        left: 40%;
+        top: 80%;
+        animation-delay: 1.4s;
+      }
+
+      @keyframes firework {
+        0% {
+          transform: scale(0.5);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(2);
+          opacity: 0.7;
+        }
+        100% {
+          transform: scale(3);
+          opacity: 0;
+        }
+      }
     </style>
   </head>
   <body class="flex items-center justify-center h-screen bg-gray-100">
@@ -48,13 +127,29 @@
         class="w-full p-2 border rounded mb-4"
         placeholder="Enter words, one per line..."
       ></textarea>
-      <input
-        type="number"
-        id="speed"
-        value="750"
-        class="w-full p-2 border rounded mb-4"
-        placeholder="Card change speed in milliseconds (e.g., 2000)"
-      />
+      <div class="flex space-x-2 mb-4">
+        <button
+          id="speed1"
+          class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded"
+          data-speed="1000"
+        >
+          1s
+        </button>
+        <button
+          id="speed2"
+          class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded selected"
+          data-speed="2000"
+        >
+          2s
+        </button>
+        <button
+          id="speed3"
+          class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded"
+          data-speed="3000"
+        >
+          3s
+        </button>
+      </div>
       <div class="flex space-x-2">
         <button
           id="fillButton"
@@ -84,8 +179,21 @@
 
     <div
       id="resultScreen"
-      class="hidden flex flex-col items-center justify-center w-full max-w-md text-center"
+      class="hidden flex flex-col items-center justify-center w-full max-w-md text-center relative"
     >
+      <!-- Fireworks container -->
+      <div id="fireworks" class="hidden">
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+      </div>
+
+      <img id="medalImage" src="" alt="Medal" class="mb-4 w-[400px]" />
       <h1 class="text-2xl font-bold mb-4">Results</h1>
       <div id="resultMessage" class="text-xl mb-4"></div>
       <div id="wrongWordsList" class="text-left mb-4"></div>
@@ -119,6 +227,7 @@
       const wrongWordsList = document.getElementById("wrongWordsList");
       const holdButton = document.getElementById("holdButton");
       const backButton = document.getElementById("backButton");
+      const medalImage = document.getElementById("medalImage");
 
       const textarea = document.getElementById("wordList");
       textarea.addEventListener("input", function () {
@@ -128,14 +237,27 @@
       document.getElementById("fillButton").onclick = () => {
         textarea.value =
           "help\nlet\nran\nbad\nget\nwet\nput\ncatch\nwith\nthat\nthen\noff";
-        document.getElementById("speed").value = 3000;
+        document
+          .querySelectorAll("[id^=speed]")
+          .forEach((btn) => btn.classList.remove("selected"));
+        speed = 2000;
+        document.querySelector("#speed2").classList.add("selected");
       };
+
+      document.querySelectorAll("[id^=speed]").forEach((button) => {
+        button.onclick = () => {
+          speed = parseInt(button.getAttribute("data-speed"));
+          // Remove "selected" class from all buttons
+          document
+            .querySelectorAll("[id^=speed]")
+            .forEach((btn) => btn.classList.remove("selected"));
+          // Add "selected" class to the clicked button
+          button.classList.add("selected");
+        };
+      });
 
       document.getElementById("startButton").onclick = () => {
         const wordListInput = textarea.value.trim();
-        speed =
-          parseInt(document.getElementById("speed").value.trim()) || speed;
-
         words = wordListInput.split("\n").filter((word) => word.trim() !== "");
         if (words.length > 0 && speed > 0) {
           setupScreen.classList.add("hidden");
@@ -302,8 +424,27 @@
         gameStarted = false;
         flashcardScreen.classList.add("hidden");
         resultScreen.classList.remove("hidden");
-        resultMessage.innerHTML = `Correct: ${correct} <br> Wrong: ${wrong}`;
+        const fireworksContainer = document.getElementById("fireworks");
+        fireworksContainer.classList.add("hidden");
 
+        const score = (correct / words.length) * 100;
+
+        if (score === 100) {
+          medalImage.src = "prestige.png";
+          medalImage.alt = "Prestige Medal";
+          fireworksContainer.classList.remove("hidden"); // Show fireworks for 100% score
+        } else if (score > 90) {
+          medalImage.src = "gold.png";
+          medalImage.alt = "Gold Medal";
+        } else if (score > 70) {
+          medalImage.src = "silver.png";
+          medalImage.alt = "Silver Medal";
+        } else {
+          medalImage.src = "bronze.png";
+          medalImage.alt = "Bronze Medal";
+        }
+
+        resultMessage.innerHTML = `Correct: ${correct} <br> Wrong: ${wrong}`;
         wrongWordsList.innerHTML = `Wrong Words: <br> ${wrongWords
           .map((word) => `<span>${word}</span>`)
           .join("<br>")}`;
